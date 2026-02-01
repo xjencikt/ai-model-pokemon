@@ -1,10 +1,7 @@
 from pyboy import PyBoy
 
-pyboy = PyBoy("pokemon_red.gb", window="SDL2")
-pyboy.set_emulation_speed(0)
+frame = 1
 
-
-frame = 0
 # Writes my player's name (TJ) and Gary's name (KAZ)
 name_frames = {
     4100: "right", 4150: "down", 4200: "down", 4250: "a", 4300: "left", 4350: "up", 4400: "a",
@@ -16,20 +13,100 @@ name_frames = {
     7050: "down", 7100: "a", 7150: "down", 7200: "down", 7250: "right", 7300: "a",
 }
 
-while pyboy.tick():
+ACTIONS = [
+    "a",
+    "b",
+    "up",
+    "down",
+    "right",
+    "left",
+    "start",
+    "select"
+]
 
-    # Gets to choosing player's name
-    if (frame % 200 == 0 and frame <= 4000) or (frame % 200 == 0 and 7400 < frame <= 8800):
-        pyboy.button("a")
+class PokemonRed:
+    def __init__(self, name, window="SDL2"):
+        self.name = name
+        self.window = window
+        self.frame = 0
 
-    if frame % 50 == 0 and 4099 < frame <= 7350:
-        if frame in name_frames:
-            pyboy.button(name_frames[frame])
+        self.pyboy = PyBoy(self.name, window=self.window)
+        self.pyboy.set_emulation_speed(1)
 
-    print(frame)
-    frame += 1
+    def _position(self):
+        self.x = self.pyboy.memory[0xD361]
+        self.y = self.pyboy.memory[0xD362]
+
+        return [self.x, self.y]
+
+    def create_game(self):
+
+        while self.pyboy.tick():
+
+            # Gets to choosing player's name
+            if (self.frame % 200 == 0 and self.frame <= 4000) or (self.frame % 200 == 0 and 7400 < self.frame <= 9999):
+                self.pyboy.button("a", 3)
+
+            if self.frame % 50 == 0 and 4099 < self.frame <= 7350:
+                if self.frame in name_frames:
+                    self.pyboy.button(name_frames[self.frame])
+
+            if self.frame == 10000:
+                 break
+
+            self.frame += 1
+
+
+    def save_game(self):
+        self.frame = 0
+        while self.pyboy.tick():
+            if self.frame == 400:
+                self.pyboy.button("start", 3)
+
+            if self.frame % 100 == 0 and 700 < self.frame < 1100:
+                self.pyboy.button("down", 3)
+
+            if self.frame % 100 == 0 and 1200 < self.frame < 1800:
+                self.pyboy.button("a", 3)
+
+            if self.frame == 2000:
+                with open("pokemon_red_save.state", "wb") as f:
+                    self.pyboy.save_state(f)
+                break
+
+
+            print(self.frame)
+            self.frame += 1
+
+    def end_game(self):
+        self.pyboy.stop()
+
+    def load_game(self):
+        while self.pyboy.tick():
+            if self.frame % 200 == 0 and self.frame <= 1500:
+                self.pyboy.button("a", 3)
+
+            if self.frame % 500 == 0:
+                player_x = self.pyboy.memory[0xD361]
+                player_y = self.pyboy.memory[0xD362]
+                map_id = self.pyboy.memory[0xD35E]
+                in_battle = self.pyboy.memory[0xD057]
+
+                print(player_x)
+                print(player_y)
+                print(map_id)
+                print(in_battle)
+
+            self.frame += 1
+
+pokemon_red = PokemonRed("pokemon_red.gb", window="SDL2")
+
+# Creating First save
+# pokemon_red.create_game()
+# pokemon_red.save_game()
+# pokemon_red.end_game()
+
+pokemon_red.load_game()
 
 
 
-
-pyboy.stop()
