@@ -5,7 +5,7 @@ import random
 from collections import deque
 import numpy as np
 import torch.optim as optim
-
+from main import pokemon_red
 
 class QNet(nn.Module):
     def __init__(self, input_dim=3, num_actions=4):  # 4 directions
@@ -46,3 +46,10 @@ target_model = QNet().float()
 target_model.load_state_dict(model.state_dict())
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 buffer = ReplayBuffer()
+
+
+num_episodes = 1000
+
+for episode in range(num_episodes):
+    pokemon_red.load_game()
+    state = pokemon_red.get_state()
