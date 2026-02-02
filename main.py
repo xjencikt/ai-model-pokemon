@@ -23,12 +23,12 @@ ACTIONS = ["noop", "a", "b",
 
 
 class PokemonRed:
-    def __init__(self, name, window="SDL2"):
+    def __init__(self, name, sound, window="SDL2"):
         self.name = name
         self.window = window
         self.frame = 0
 
-        self.pyboy = PyBoy(self.name, window=self.window)
+        self.pyboy = PyBoy(self.name, window=self.window, sound_volume=sound)
         self.pyboy.set_emulation_speed(0)
 
         self.map_id = self.pyboy.memory[0xD35E]
@@ -97,12 +97,11 @@ class PokemonRed:
     def player_action(self, act_idx):
         if act_idx != 0:
             button = ACTIONS[act_idx]
-            print(button)
             self.pyboy.button(button)
         else:
             pass
 
-pokemon_red = PokemonRed("pokemon_red.gb", window="SDL2")
+pokemon_red = PokemonRed("pokemon_red.gb", sound=0, window="SDL2")
 
 # Creating First save
 # pokemon_red.create_game()

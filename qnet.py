@@ -58,11 +58,8 @@ tick_ratio = 20
 
 def select_action(a_state, a_model, a_epsilon):
     if random.random() < a_epsilon:
-        print(random.random())
-        # Explore: random move
         return random.randrange(7)
     else:
-        # Exploit: best predicted move
         with torch.no_grad():
             state_t = torch.tensor(a_state, dtype=torch.float32).unsqueeze(0)
             q_values = a_model(state_t)
@@ -76,14 +73,24 @@ for episode in range(num_episodes):
     done = False
     step = 0
 
-    act_idx = select_action(state, model, epsilon)
-    pokemon_red.player_action(act_idx)
+    while not done and step < max_steps:
+        act_idx = select_action(state, model, epsilon)
+        pokemon_red.player_action(act_idx)
 
-    for _ in range(tick_ratio):
-        pokemon_red.pyboy.tick()
+        for _ in range(tick_ratio):
+            pokemon_red.pyboy.tick()
+
+        next_state = pokemon_red.get_state()
+
+        reward = -0.01
+        if state[2] != next_state[2]:
+            reward = 10.0
+            done = True
+
+        step += 1
+        print(reward)
 
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
-
-    print(epsilon)
+    print(f"Episode {episode}, epsilon = {epsilon}")
 
 
