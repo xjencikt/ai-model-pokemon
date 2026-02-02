@@ -1,4 +1,5 @@
 from pyboy import PyBoy
+from sympy.physics.units import action
 
 frame = 1
 
@@ -14,14 +15,13 @@ name_frames = {
 }
 
 ACTIONS = [
+    "noop"
     "a",
     "b",
     "up",
     "down",
     "right",
     "left",
-    "start",
-    "select"
 ]
 
 class PokemonRed:
@@ -33,11 +33,15 @@ class PokemonRed:
         self.pyboy = PyBoy(self.name, window=self.window)
         self.pyboy.set_emulation_speed(1)
 
+        self.map_id = self.pyboy.memory[0xD35E]
+        self.in_battle_state = self.pyboy.memory[0xD057]
+
     def _position(self):
         self.x = self.pyboy.memory[0xD361]
         self.y = self.pyboy.memory[0xD362]
 
         return [self.x, self.y]
+
 
     def create_game(self):
 
@@ -98,6 +102,11 @@ class PokemonRed:
                 print(in_battle)
 
             self.frame += 1
+
+    def player_action(self):
+        if action != 0:
+            self.pyboy.button(ACTIONS[action])
+
 
 pokemon_red = PokemonRed("pokemon_red.gb", window="SDL2")
 
