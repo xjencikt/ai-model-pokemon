@@ -1,5 +1,7 @@
 from pyboy import PyBoy
 from sympy.physics.units import action
+import numpy as np
+
 
 frame = 1
 
@@ -14,15 +16,11 @@ name_frames = {
     7050: "down", 7100: "a", 7150: "down", 7200: "down", 7250: "right", 7300: "a",
 }
 
-ACTIONS = [
-    "noop"
-    "a",
-    "b",
-    "up",
-    "down",
-    "right",
-    "left",
-]
+ACTIONS = ["noop", "a", "b",
+           "up", "down",
+           "right", "left",
+           ]
+
 
 class PokemonRed:
     def __init__(self, name, window="SDL2"):
@@ -31,7 +29,7 @@ class PokemonRed:
         self.frame = 0
 
         self.pyboy = PyBoy(self.name, window=self.window)
-        self.pyboy.set_emulation_speed(1)
+        self.pyboy.set_emulation_speed(0)
 
         self.map_id = self.pyboy.memory[0xD35E]
         self.in_battle_state = self.pyboy.memory[0xD057]
@@ -85,28 +83,24 @@ class PokemonRed:
     def end_game(self):
         self.pyboy.stop()
 
-    def load_game(self):
-        while self.pyboy.tick():
-            if self.frame % 200 == 0 and self.frame <= 1500:
-                self.pyboy.button("a", 3)
+    def load_game(self, save):
+        with open(save, "rb") as f:
+            self.pyboy.load_state(f)
 
-            if self.frame % 500 == 0:
-                player_x = self.pyboy.memory[0xD361]
-                player_y = self.pyboy.memory[0xD362]
-                map_id = self.pyboy.memory[0xD35E]
-                in_battle = self.pyboy.memory[0xD057]
+    def get_state(self):
+        ram = self.pyboy.memory
+        x = ram[0xD361]
+        y = ram[0xD362]
+        map_id = ram[0xD35E]
+        return np.array([x, y, map_id], dtype=np.float32)
 
-                print(player_x)
-                print(player_y)
-                print(map_id)
-                print(in_battle)
-
-            self.frame += 1
-
-    def player_action(self):
-        if action != 0:
-            self.pyboy.button(ACTIONS[action])
-
+    def player_action(self, act_idx):
+        if act_idx != 0:
+            button = ACTIONS[act_idx]
+            print(button)
+            self.pyboy.button(button)
+        else:
+            pass
 
 pokemon_red = PokemonRed("pokemon_red.gb", window="SDL2")
 
@@ -114,8 +108,11 @@ pokemon_red = PokemonRed("pokemon_red.gb", window="SDL2")
 # pokemon_red.create_game()
 # pokemon_red.save_game()
 # pokemon_red.end_game()
-
-pokemon_red.load_game()
-
+#pokemon_red.load_game()
+#
+# player_x = self.pyboy.memory[0xD361]
+# player_y = self.pyboy.memory[0xD362]
+# map_id = self.pyboy.memory[0xD35E]
+# in_battle = self.pyboy.memory[0xD057]
 
 
