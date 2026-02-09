@@ -7,7 +7,7 @@ import numpy as np
 import torch.optim as optim
 from main import pokemon_red
 
-class QNet(nn.Module):
+class DQNet(nn.Module):
     def __init__(self, input_dim=3, num_actions=7):  # 4 directions
         super().__init__()
         self.net = nn.Sequential(
@@ -42,8 +42,8 @@ class ReplayBuffer:
         return len(self.buffer)
 
 
-model = QNet().float()
-target_model = QNet().float()
+model = DQNet().float()
+target_model = DQNet().float()
 target_model.load_state_dict(model.state_dict())
 optimizer = optim.Adam(model.parameters(), lr=1e-3)
 buffer = ReplayBuffer()
@@ -55,6 +55,7 @@ epsilon_min = 0.1
 epsilon_decay = 0.995
 max_steps = 100
 tick_ratio = 20
+gamma = 0.99 #reward
 
 def select_action(a_state, a_model, a_epsilon):
     if random.random() < a_epsilon:
@@ -87,8 +88,27 @@ for episode in range(num_episodes):
             reward = 10.0
             done = True
 
+        state_t = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        next_state_t = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
+        action_t = torch.tensor([act_idx])
+        reward_t = torch.tensor([reward], dtype=torch.float32)
+        done_t = torch.tensor([done], dtype=torch.float32)
+
+        dqn = model(state_t).gather(1, action_t.unsqueeze(1)).squeeze(1)
+
+        with torch.no_grad():
+            q_next = target_model(next_state_t).max(1)[0]
+            target = reward_t + gamma + q_next * (1 - done_t)
+
+        loss = torch.nn.functional.mse_loss(dqn, target)
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
+
         step += 1
-        print(reward)
 
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
     print(f"Episode {episode}, epsilon = {epsilon}")
