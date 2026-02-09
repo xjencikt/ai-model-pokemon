@@ -45,7 +45,7 @@ class ReplayBuffer:
 model = DQNet().float()
 target_model = DQNet().float()
 target_model.load_state_dict(model.state_dict())
-optimizer = optim.Adam(model.parameters(), lr=1e-4)
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
 buffer = ReplayBuffer()
 
 
@@ -54,16 +54,16 @@ epsilon = 1.0
 random_number_threshold = 0.8
 epsilon_min = 0.1
 epsilon_decay = 0.995
-max_steps = 25
+max_steps = 100
 tick_ratio = 20
 gamma = 0.99 #reward
 
 def select_action(a_state, a_model, a_epsilon, threshold):
     if random.random() < a_epsilon:
-        if random.random() < threshold: # up, down, right, left
-            return random.randrange(4)
-        else: # "noop", "a", "b"
-            return random.randrange(3)
+        if random.random() < threshold:
+            return random.randrange(3, 7)
+        else:
+            return random.randrange(0, 3)
     else:
         with torch.no_grad():
             state_t = torch.tensor(a_state, dtype=torch.float32).unsqueeze(0)
@@ -77,30 +77,35 @@ for episode in range(num_episodes):
 
     done = False
     step = 0
+    visited_tiles = set()
 
     while not done and step < max_steps:
         act_idx = select_action(state, model, epsilon, random_number_threshold)
-
         position = pokemon_red.get_position()
-        pokemon_red.player_action(act_idx, random_number_threshold)
+        position_tuple = tuple(position)
+        pokemon_red.player_action(act_idx)
         new_position = pokemon_red.get_position()
+
         for _ in range(tick_ratio):
             pokemon_red.pyboy.tick()
 
         next_state = pokemon_red.get_state()
 
         reward = -0.01
-
         if act_idx > 2:  # noop - 0, a - 1, b - 2 actions
             if position == new_position: # hit wall
-                reward -= 0.02
+                reward -= 0.01
+            if position_tuple not in visited_tiles:
+                reward += 0.02
         else: # did not move
-            reward -= 0.03
+            reward -= 0.02
 
         if state[2] != next_state[2]:
             reward = 10.0
+            print(reward)
             done = True
 
+        visited_tiles.add(position_tuple)
         state_t = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         next_state_t = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
         action_t = torch.tensor([act_idx], dtype=torch.long)
@@ -127,6 +132,6 @@ for episode in range(num_episodes):
         target_model.load_state_dict(model.state_dict())
 
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
-    print(f"Episode {episode}, epsilon = {epsilon}", f"reward = {reward}")
+    print(f"Episode {episode}, epsilon = {epsilon}")
 
 

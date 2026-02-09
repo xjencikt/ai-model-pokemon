@@ -17,9 +17,18 @@ name_frames = {
 }
 
 
-CLICK_ACTIONS = ["noop", "a", "b"]
-MOVING_ACTIONS = ["up", "down", "right", "left"]
+CLICK_ACTIONS = {
+    0: "noop",
+    1: "a",
+    2: "b",
+}
 
+MOVE_ACTIONS = {
+    3: "up",
+    4: "down",
+    5: "left",
+    6: "right",
+}
 
 class PokemonRed:
     def __init__(self, name, sound, window="SDL2"):
@@ -92,13 +101,13 @@ class PokemonRed:
         map_id = ram[0xD35E]
         return np.array([x, y, map_id], dtype=np.float32)
 
-    def player_action(self, act_idx, threshold):
-        if random.random() < threshold:
-                button = MOVING_ACTIONS[act_idx]
+    def player_action(self, act_idx):
+        if act_idx > 2:
+                button = MOVE_ACTIONS.get(act_idx)
                 self.pyboy.button(button)
         else:
             if act_idx != 0:
-                button = CLICK_ACTIONS[act_idx]
+                button = CLICK_ACTIONS.get(act_idx)
                 self.pyboy.button(button)
 
 pokemon_red = PokemonRed("pokemon_red.gb", sound=0, window="SDL2")
