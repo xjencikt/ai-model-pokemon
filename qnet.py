@@ -45,21 +45,25 @@ class ReplayBuffer:
 model = DQNet().float()
 target_model = DQNet().float()
 target_model.load_state_dict(model.state_dict())
-optimizer = optim.Adam(model.parameters(), lr=1e-3)
+optimizer = optim.Adam(model.parameters(), lr=1e-4)
 buffer = ReplayBuffer()
 
 
 num_episodes = 1000
 epsilon = 1.0
+random_number_threshold = 0.8
 epsilon_min = 0.1
 epsilon_decay = 0.995
-max_steps = 100
+max_steps = 25
 tick_ratio = 20
 gamma = 0.99 #reward
 
-def select_action(a_state, a_model, a_epsilon):
+def select_action(a_state, a_model, a_epsilon, threshold):
     if random.random() < a_epsilon:
-        return random.randrange(7)
+        if random.random() < threshold: # up, down, right, left
+            return random.randrange(4)
+        else: # "noop", "a", "b"
+            return random.randrange(3)
     else:
         with torch.no_grad():
             state_t = torch.tensor(a_state, dtype=torch.float32).unsqueeze(0)
@@ -75,22 +79,31 @@ for episode in range(num_episodes):
     step = 0
 
     while not done and step < max_steps:
-        act_idx = select_action(state, model, epsilon)
-        pokemon_red.player_action(act_idx)
+        act_idx = select_action(state, model, epsilon, random_number_threshold)
 
+        position = pokemon_red.get_position()
+        pokemon_red.player_action(act_idx, random_number_threshold)
+        new_position = pokemon_red.get_position()
         for _ in range(tick_ratio):
             pokemon_red.pyboy.tick()
 
         next_state = pokemon_red.get_state()
 
         reward = -0.01
+
+        if act_idx > 2:  # noop - 0, a - 1, b - 2 actions
+            if position == new_position: # hit wall
+                reward -= 0.02
+        else: # did not move
+            reward -= 0.03
+
         if state[2] != next_state[2]:
             reward = 10.0
             done = True
 
         state_t = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         next_state_t = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
-        action_t = torch.tensor([act_idx])
+        action_t = torch.tensor([act_idx], dtype=torch.long)
         reward_t = torch.tensor([reward], dtype=torch.float32)
         done_t = torch.tensor([done], dtype=torch.float32)
 
@@ -98,7 +111,7 @@ for episode in range(num_episodes):
 
         with torch.no_grad():
             q_next = target_model(next_state_t).max(1)[0]
-            target = reward_t + gamma + q_next * (1 - done_t)
+            target = reward_t + gamma * q_next * (1 - done_t)
 
         loss = torch.nn.functional.mse_loss(dqn, target)
 
@@ -106,11 +119,14 @@ for episode in range(num_episodes):
         loss.backward()
         optimizer.step()
 
-        optimizer = torch.optim.Adam(model.parameters(), lr=1e-4)
 
+        state = next_state
         step += 1
 
+    if episode % 10 == 0:
+        target_model.load_state_dict(model.state_dict())
+
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
-    print(f"Episode {episode}, epsilon = {epsilon}")
+    print(f"Episode {episode}, epsilon = {epsilon}", f"reward = {reward}")
 
 

@@ -1,7 +1,7 @@
 from pyboy import PyBoy
 from sympy.physics.units import action
 import numpy as np
-
+import random
 
 frame = 1
 
@@ -16,10 +16,9 @@ name_frames = {
     7050: "down", 7100: "a", 7150: "down", 7200: "down", 7250: "right", 7300: "a",
 }
 
-ACTIONS = ["noop", "a", "b",
-           "up", "down",
-           "right", "left",
-           ]
+
+CLICK_ACTIONS = ["noop", "a", "b"]
+MOVING_ACTIONS = ["up", "down", "right", "left"]
 
 
 class PokemonRed:
@@ -33,13 +32,6 @@ class PokemonRed:
 
         self.map_id = self.pyboy.memory[0xD35E]
         self.in_battle_state = self.pyboy.memory[0xD057]
-
-    def _position(self):
-        self.x = self.pyboy.memory[0xD361]
-        self.y = self.pyboy.memory[0xD362]
-
-        return [self.x, self.y]
-
 
     def create_game(self):
 
@@ -87,6 +79,12 @@ class PokemonRed:
         with open(save, "rb") as f:
             self.pyboy.load_state(f)
 
+    def get_position(self):
+        x = self.pyboy.memory[0xD361]
+        y = self.pyboy.memory[0xD362]
+
+        return [x, y]
+
     def get_state(self):
         ram = self.pyboy.memory
         x = ram[0xD361]
@@ -94,12 +92,14 @@ class PokemonRed:
         map_id = ram[0xD35E]
         return np.array([x, y, map_id], dtype=np.float32)
 
-    def player_action(self, act_idx):
-        if act_idx != 0:
-            button = ACTIONS[act_idx]
-            self.pyboy.button(button)
+    def player_action(self, act_idx, threshold):
+        if random.random() < threshold:
+                button = MOVING_ACTIONS[act_idx]
+                self.pyboy.button(button)
         else:
-            pass
+            if act_idx != 0:
+                button = CLICK_ACTIONS[act_idx]
+                self.pyboy.button(button)
 
 pokemon_red = PokemonRed("pokemon_red.gb", sound=0, window="SDL2")
 
