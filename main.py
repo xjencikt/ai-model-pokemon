@@ -113,7 +113,9 @@ class PokemonRed:
 pokemon_red = PokemonRed("pokemon_red.gb", sound=0, window="SDL2")
 
 # Creating First save
-# pokemon_red.create_game()
+#pokemon_red.create_game()
+
+
 # pokemon_red.save_game()
 # pokemon_red.end_game()
 #pokemon_red.load_game()

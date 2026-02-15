@@ -53,8 +53,8 @@ num_episodes = 1000
 epsilon = 1.0
 random_number_threshold = 0.8
 epsilon_min = 0.1
-epsilon_decay = 0.995
-max_steps = 100
+epsilon_decay = 0.997
+max_steps = 300
 tick_ratio = 20
 gamma = 0.99 #reward
 
@@ -71,6 +71,7 @@ def select_action(a_state, a_model, a_epsilon, threshold):
             return q_values.argmax(dim=1).item()
 
 
+
 for episode in range(num_episodes):
     pokemon_red.load_game("pokemon_red_save.state")
     state = pokemon_red.get_state()
@@ -78,16 +79,19 @@ for episode in range(num_episodes):
     done = False
     step = 0
     visited_tiles = set()
+    visited_places = set()
+    visited_places.add(state[2])
 
     while not done and step < max_steps:
         act_idx = select_action(state, model, epsilon, random_number_threshold)
         position = pokemon_red.get_position()
         position_tuple = tuple(position)
         pokemon_red.player_action(act_idx)
-        new_position = pokemon_red.get_position()
 
         for _ in range(tick_ratio):
             pokemon_red.pyboy.tick()
+
+        new_position = pokemon_red.get_position()
 
         next_state = pokemon_red.get_state()
 
@@ -95,15 +99,26 @@ for episode in range(num_episodes):
         if act_idx > 2:  # noop - 0, a - 1, b - 2 actions
             if position == new_position: # hit wall
                 reward -= 0.01
-            if position_tuple not in visited_tiles:
+
+            new_position_tuple = tuple(new_position)
+
+            if new_position_tuple not in visited_tiles:
                 reward += 0.02
+                visited_tiles.add(new_position_tuple)
         else: # did not move
             reward -= 0.02
 
-        if state[2] != next_state[2]:
-            reward = 10.0
+        if state[2] != next_state[2] and next_state[2] not in visited_places:
+            visited_tiles = set()
+            position = new_position
+
+            visited_places.add(next_state[2])
+            reward = 20.0
             print(reward)
-            done = True
+
+        if state[2] != next_state[2] and next_state[2] in visited_places:
+            reward -= 0.02
+
 
         visited_tiles.add(position_tuple)
         state_t = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
@@ -123,6 +138,7 @@ for episode in range(num_episodes):
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
+
 
 
         state = next_state
