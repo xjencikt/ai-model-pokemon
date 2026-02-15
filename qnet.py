@@ -21,6 +21,9 @@ class DQNet(nn.Module):
     def forward(self, x):
         return self.net(x)
 
+TILES = {
+    300: "grass"
+}
 
 class ReplayBuffer:
     def __init__(self, capacity=10000):
@@ -85,15 +88,18 @@ for episode in range(num_episodes):
     while not done and step < max_steps:
         act_idx = select_action(state, model, epsilon, random_number_threshold)
         position = pokemon_red.get_position()
+
+        tile = pokemon_red.pyboy.tilemap_background
+        tile_id = tile[position[0], position[1]]
+
         position_tuple = tuple(position)
         pokemon_red.player_action(act_idx)
-
-        for _ in range(tick_ratio):
-            pokemon_red.pyboy.tick()
 
         new_position = pokemon_red.get_position()
 
         next_state = pokemon_red.get_state()
+
+        #Rewards
 
         reward = -0.01
         if act_idx > 2:  # noop - 0, a - 1, b - 2 actions
@@ -113,11 +119,15 @@ for episode in range(num_episodes):
             position = new_position
 
             visited_places.add(next_state[2])
-            reward = 20.0
-            print(reward)
+            reward = 10.0
 
         if state[2] != next_state[2] and next_state[2] in visited_places:
             reward -= 0.02
+
+        if tile_id == 300:
+            reward = 20.0
+            print(reward)
+            done = True
 
 
         visited_tiles.add(position_tuple)

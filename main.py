@@ -30,6 +30,8 @@ MOVE_ACTIONS = {
     6: "right",
 }
 
+
+
 class PokemonRed:
     def __init__(self, name, sound, window="SDL2"):
         self.name = name
@@ -45,6 +47,9 @@ class PokemonRed:
     def create_game(self):
 
         while self.pyboy.tick():
+
+            x = self.pyboy.memory[0xD361]
+            y = self.pyboy.memory[0xD362]
 
             # Gets to choosing player's name
             if (self.frame % 200 == 0 and self.frame <= 4000) or (self.frame % 200 == 0 and 7400 < self.frame <= 9999):
@@ -104,16 +109,22 @@ class PokemonRed:
     def player_action(self, act_idx):
         if act_idx > 2:
                 button = MOVE_ACTIONS.get(act_idx)
-                self.pyboy.button(button)
+                self.pyboy.button_press(button) # DO NOT USE pyboy.button!!! - use press/release
+                for _ in range(10):
+                    pokemon_red.pyboy.tick()
+                self.pyboy.button_release(button)
         else:
             if act_idx != 0:
                 button = CLICK_ACTIONS.get(act_idx)
-                self.pyboy.button(button)
+                self.pyboy.button_press(button) # DO NOT USE pyboy.button!!! - use press/release
+                for _ in range(10):
+                    pokemon_red.pyboy.tick()
+                self.pyboy.button_release(button)
 
 pokemon_red = PokemonRed("pokemon_red.gb", sound=0, window="SDL2")
 
 # Creating First save
-#pokemon_red.create_game()
+# pokemon_red.create_game()
 
 
 # pokemon_red.save_game()
