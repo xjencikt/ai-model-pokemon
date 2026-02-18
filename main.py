@@ -51,6 +51,10 @@ class PokemonRed:
             x = self.pyboy.memory[0xD361]
             y = self.pyboy.memory[0xD362]
 
+            # player_x = self.pyboy.memory[0xD361]
+            # player_y = self.pyboy.memory[0xD362]
+            # map_id = self.pyboy.memory[0xD35E]
+
             # Gets to choosing player's name
             if (self.frame % 200 == 0 and self.frame <= 4000) or (self.frame % 200 == 0 and 7400 < self.frame <= 9999):
                 self.pyboy.button("a", 3)
@@ -104,7 +108,17 @@ class PokemonRed:
         x = ram[0xD361]
         y = ram[0xD362]
         map_id = ram[0xD35E]
-        return np.array([x, y, map_id], dtype=np.float32)
+
+        tile = self.pyboy.tilemap_background
+        # Radius 3x3
+        radius_tiles = []
+        for px in range(-1, 2):
+            for py in range(-1, 2):
+                radius_tile = tile[x + px][y + py] / 512
+                radius_tiles.append(radius_tile)
+
+
+        return np.array([x / 255.0, y / 255.0, map_id / 255.0] + radius_tiles, dtype=np.float32)
 
     def player_action(self, act_idx):
         if act_idx > 2:
@@ -124,7 +138,7 @@ class PokemonRed:
 pokemon_red = PokemonRed("pokemon_red.gb", sound=0, window="SDL2")
 
 # Creating First save
-# pokemon_red.create_game()
+pokemon_red.create_game()
 
 
 # pokemon_red.save_game()
