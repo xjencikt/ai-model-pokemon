@@ -58,7 +58,7 @@ num_episodes = 400
 epsilon = 1.0
 random_number_threshold = 0.9
 epsilon_min = 0.1
-epsilon_decay = 0.990
+epsilon_decay = 0.995
 max_steps = 400
 tick_ratio = 20
 gamma = 0.99 #reward
@@ -93,7 +93,7 @@ for episode in range(num_episodes):
     visited_places.add(state[2])
     epsilon_rewards = 0
 
-    room_reward = 5.5
+    room_reward = 6
 
     while not done and step < max_steps:
         act_idx = select_action(state, model, epsilon, random_number_threshold)
@@ -132,14 +132,18 @@ for episode in range(num_episodes):
             visited_places.add(next_state[2])
             reward += room_reward
 
+            room_reward = room_reward + 6
+
         elif state[2] != next_state[2] and next_state[2] in visited_places:
             reward -= 2.0
 
 
         if state[2] == 0:
+
             max_distance = 20
             distance = manhattan_distance(position, [1,10])
-            reward += 0.02 * (max_distance - distance)
+            reward += 0.01 * (max_distance - distance)
+            print(reward)
 
         if (position == [1,10] or position == [1,11]) and state[2] == 0:
             reward = 40.0
@@ -181,7 +185,7 @@ for episode in range(num_episodes):
 
 
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
-    print(f"Episode {episode}, epsilon = {epsilon}, epsilon rewards = {epsilon_rewards}" )
+    print(f"Episode {episode}, epsilon = {epsilon}")
 
     list_epsilon_rewards.append(epsilon_rewards)
 
