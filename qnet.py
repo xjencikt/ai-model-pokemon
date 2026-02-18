@@ -5,6 +5,8 @@ import random
 from collections import deque
 import numpy as np
 import torch.optim as optim
+import matplotlib.pyplot as plt
+
 from main import pokemon_red
 
 class DQNet(nn.Module):
@@ -61,6 +63,8 @@ max_steps = 300
 tick_ratio = 20
 gamma = 0.99 #reward
 
+list_epsilon_rewards = []
+
 def select_action(a_state, a_model, a_epsilon, threshold):
     if random.random() < a_epsilon:
         if random.random() < threshold:
@@ -84,6 +88,7 @@ for episode in range(num_episodes):
     visited_tiles = set()
     visited_places = set()
     visited_places.add(state[2])
+    epsilon_rewards = 0
 
     while not done and step < max_steps:
         act_idx = select_action(state, model, epsilon, random_number_threshold)
@@ -109,7 +114,7 @@ for episode in range(num_episodes):
             new_position_tuple = tuple(new_position)
 
             if new_position_tuple not in visited_tiles:
-                reward += 0.02
+                reward += 0.0
                 visited_tiles.add(new_position_tuple)
         else: # did not move
             reward -= 0.02
@@ -119,14 +124,14 @@ for episode in range(num_episodes):
             position = new_position
 
             visited_places.add(next_state[2])
-            reward = 10.0
+            reward = 4.0
+            print(reward)
 
         if state[2] != next_state[2] and next_state[2] in visited_places:
             reward -= 0.02
 
         if tile_id == 300:
-            reward = 20.0
-            print(reward)
+            reward = 8.0
             done = True
 
 
@@ -150,6 +155,7 @@ for episode in range(num_episodes):
         optimizer.step()
 
 
+        epsilon_rewards += reward
 
         state = next_state
         step += 1
@@ -157,7 +163,15 @@ for episode in range(num_episodes):
     if episode % 10 == 0:
         target_model.load_state_dict(model.state_dict())
 
+
+
     epsilon = max(epsilon_min, epsilon * epsilon_decay)
-    print(f"Episode {episode}, epsilon = {epsilon}")
+    print(f"Episode {episode}, epsilon = {epsilon}, epsilon rewards = {epsilon_rewards}" )
 
+    list_epsilon_rewards.append(epsilon_rewards)
 
+plt.plot(list_epsilon_rewards)
+plt.title("Episode reward over time")
+plt.xlabel("Episode")
+plt.ylabel("Total reward")
+plt.show()
