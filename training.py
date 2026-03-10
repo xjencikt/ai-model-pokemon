@@ -1,3 +1,5 @@
+from pydantic import BaseModel
+
 from qnet import DQNet, ReplayBuffer
 
 import torch
@@ -8,21 +10,23 @@ import matplotlib.pyplot as plt
 from main import pokemon_red
 import random
 
+class TrainingConfig(BaseModel):
+    learning_rate: float = 1e-4
+    num_episodes: int = 400
+    epsilon: float = 1.0
+    epsilon_min: float = 0.1
+    epsilon_decay: float = 0.995
+    max_steps: int = 400
+    tick_ratio: int = 20
+    gamma: float = 0.99 # reward
+
+config = TrainingConfig()
+
 model = DQNet().float()
 target_model = DQNet().float()
 target_model.load_state_dict(model.state_dict())
-optimizer = optim.Adam(model.parameters(), lr=1e-45)
+optimizer = optim.Adam(model.parameters(), lr=config.learning_rate)
 buffer = ReplayBuffer()
-
-
-num_episodes = 400
-epsilon = 1.0
-random_number_threshold = 0.9
-epsilon_min = 0.1
-epsilon_decay = 0.995
-max_steps = 400
-tick_ratio = 20
-gamma = 0.99 #reward
 
 list_epsilon_rewards = []
 
@@ -41,7 +45,7 @@ def select_action(a_state, a_model, a_epsilon, threshold):
             q_values = a_model(state_t)
             return q_values.argmax(dim=1).item()
 
-for episode in range(num_episodes):
+for episode in range(config.num_episodes):
     pokemon_red.load_game(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\saves\pokemon_red_save.state")
     state = pokemon_red.get_state()
 
@@ -54,8 +58,8 @@ for episode in range(num_episodes):
 
     room_reward = 6
 
-    while not done and step < max_steps:
-        act_idx = select_action(state, model, epsilon, random_number_threshold)
+    while not done and step < config.max_steps:
+        act_idx = select_action(state, model, epsilon, config.random_number_threshold)
         position = pokemon_red.get_position()
 
         tile = pokemon_red.pyboy.tilemap_background
@@ -124,7 +128,7 @@ for episode in range(num_episodes):
 
             with torch.no_grad():
                 q_next = target_model(next_states).max(1)[0]
-                target = rewards_b + gamma * q_next * (1 - dones)
+                target = rewards_b + config.gamma * q_next * (1 - dones)
 
             loss = torch.nn.functional.mse_loss(dqn, target)
 
@@ -142,7 +146,7 @@ for episode in range(num_episodes):
 
 
 
-    epsilon = max(epsilon_min, epsilon * epsilon_decay)
+    epsilon = max(config.epsilon_min, epsilon * config.epsilon_decay)
     print(f"Episode {episode}, epsilon = {epsilon}")
 
     list_epsilon_rewards.append(epsilon_rewards)
