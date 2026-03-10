@@ -82,7 +82,7 @@ class PokemonRed:
                 self.pyboy.button("a", 3)
 
             if self.frame == 2000:
-                with open("pokemon_red_save.state", "wb") as f:
+                with open("saves/pokemon_red_save.state", "wb") as f:
                     self.pyboy.save_state(f)
                 break
 
@@ -135,14 +135,14 @@ class PokemonRed:
                     pokemon_red.pyboy.tick()
                 self.pyboy.button_release(button)
 
-pokemon_red = PokemonRed("pokemon_red.gb", sound=0, window="SDL2")
+pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0, window="SDL2")
+
 
 # Creating First save
 # pokemon_red.create_game()
-
-
 # pokemon_red.save_game()
 # pokemon_red.end_game()
+
 #pokemon_red.load_game()
 #
 # player_x = self.pyboy.memory[0xD361]
