@@ -1,9 +1,10 @@
 from contextlib import asynccontextmanager
 
 import torch
-from fastapi import FastAPI, Request
-from api.schemas import PredictionInput
+from fastapi import FastAPI, BackgroundTasks
+from api.schemas import PredictionInput, TrainingConfig
 from utils.inference import load_model
+
 
 
 @asynccontextmanager
@@ -29,4 +30,12 @@ def predict_endpoint(input: PredictionInput, model):
 
     return {"prediction": output.tolist()}
 
+train_config = TrainingConfig()
+
+@app.post("/train")
+def train(background_tasks: BackgroundTasks, input: TrainingConfig):
+    from training import train_model
+
+    background_tasks.add_task(train_model(config=input))
+    return {"message:" "Training started"}
 
