@@ -1,10 +1,6 @@
-from pydantic import BaseModel
-
 from qnet import DQNet, ReplayBuffer
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.optim as optim
 import matplotlib.pyplot as plt
 from main import pokemon_red
@@ -24,6 +20,13 @@ def select_action(a_state, a_model, a_epsilon, threshold):
             state_t = torch.tensor(a_state, dtype=torch.float32).unsqueeze(0)
             q_values = a_model(state_t)
             return q_values.argmax(dim=1).item()
+
+def plot_results(list_rewards):
+    plt.plot(list_rewards)
+    plt.title("Episode reward over time")
+    plt.xlabel("Episode")
+    plt.ylabel("Total reward")
+    plt.show()
 
 def train_model(config):
     learning_rate = config.learning_rate
@@ -149,8 +152,4 @@ def train_model(config):
 
         list_epsilon_rewards.append(epsilon_rewards)
 
-    plt.plot(list_epsilon_rewards)
-    plt.title("Episode reward over time")
-    plt.xlabel("Episode")
-    plt.ylabel("Total reward")
-    plt.show()
+        plot_results(list_rewards=list_epsilon_rewards)
