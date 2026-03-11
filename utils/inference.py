@@ -16,3 +16,4 @@ def predict(x, model):
         return output.tolist()
 
 loaded_model = load_model()
+

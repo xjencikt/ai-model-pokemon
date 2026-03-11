@@ -1,12 +1,11 @@
 import threading
 from contextlib import asynccontextmanager
-from http.client import HTTPException
+from fastapi import HTTPException
 
 import torch
 from fastapi import FastAPI, BackgroundTasks
 from api.schemas import PredictionInput, TrainingConfig
 from utils.inference import load_model
-
 from training import train_model
 
 training_running = False
@@ -87,29 +86,40 @@ def train(input: TrainingConfig):
 
     return {"message": "Training_started"}
 
-# @app.post("/train/start")
-# def train(background_tasks: BackgroundTasks, input: TrainingConfig):
-#     from training import train_model
-#     global training_running, stop_training_event
-#
-#     if training_running:
-#         return {"message": "Training is already running."}
-#
-#     stop_training_event.clear()
-#     background_tasks.add_task(train_model, input, stop_training_event)
-#     training_running = True
-#
-#     return {"message": "Training started."}
+@app.post("/train/stop")
+def stop():
+    global training_running, training_thread
+    with lock:
+        if not training_running:
+            raise HTTPException(status_code=400, detail="No training is running.")
+        else:
+            stop_training_event.set()
 
-# @app.post("/train/reset")
-# def reset(background_tasks: BackgroundTasks, input: TrainingConfig):
-#     from training import train_model
-#     global stop_training_event, training_running
-#
-#     if training_running:
-#         stop_training_event.set()
-#     else:
-#         return {"message": "No training is currently running."}
-#
-#     stop_training_event.clear()
-#     background_tasks.add_task(train_model, input, stop_training_event)
+    return {"message": "Stop requested."}
+
+@app.post("/train/restart")
+def restart(input: TrainingConfig):
+    global training_running, training_thread, stop_training_event
+
+    old_thread = None
+
+    with lock:
+        if training_running and training_thread is not None:
+            stop_training_event.set()
+            old_thread = training_thread
+
+    if old_thread is not None:
+        old_thread.join()
+
+    with lock:
+        stop_training_event = threading.Event()
+        training_running = True
+        training_thread = threading.Thread(
+            target=run_training,
+            args=(input,),
+            daemon=True,
+        )
+        training_thread.start()
+
+    return {"message": "Successfully restarted training."}
+
