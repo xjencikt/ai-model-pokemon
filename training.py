@@ -7,6 +7,7 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import random
 
+
 def manhattan_distance(pos1, pos2):
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
@@ -167,4 +168,5 @@ def train_model(config, stop_event: threading.Event):
         plot_results(list_rewards=list_epsilon_rewards)
     finally:
         training_running = False
+        print("error")
 
