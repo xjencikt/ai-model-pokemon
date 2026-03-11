@@ -20,9 +20,6 @@ class DQNet(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-TILES = {
-    300: "grass"
-}
 
 class ReplayBuffer:
     def __init__(self, capacity=10000):

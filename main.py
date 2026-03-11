@@ -2,6 +2,7 @@ from pyboy import PyBoy
 from sympy.physics.units import action
 import numpy as np
 import random
+import threading
 
 frame = 1
 
@@ -30,15 +31,15 @@ MOVE_ACTIONS = {
     6: "right",
 }
 
-
+training_running = False
 
 class PokemonRed:
-    def __init__(self, name, sound, window="SDL2"):
+    def __init__(self, name, sound, sound_emulated, window="SDL2"):
         self.name = name
         self.window = window
         self.frame = 0
 
-        self.pyboy = PyBoy(self.name, window=self.window, sound_volume=sound)
+        self.pyboy = PyBoy(self.name, window=self.window, sound_volume=sound, sound_emulated=sound_emulated)
         self.pyboy.set_emulation_speed(0)
 
         self.map_id = self.pyboy.memory[0xD35E]
@@ -135,7 +136,7 @@ class PokemonRed:
                     pokemon_red.pyboy.tick()
                 self.pyboy.button_release(button)
 
-pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0, window="SDL2")
+pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0, window="SDL2", sound_emulated=False)
 
 
 # Creating First save
