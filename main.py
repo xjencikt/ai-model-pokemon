@@ -126,17 +126,16 @@ class PokemonRed:
                 button = MOVE_ACTIONS.get(act_idx)
                 self.pyboy.button_press(button) # DO NOT USE pyboy.button!!! - use press/release
                 for _ in range(10):
-                    pokemon_red.pyboy.tick()
+                    self.pyboy.tick()
                 self.pyboy.button_release(button)
         else:
             if act_idx != 0:
                 button = CLICK_ACTIONS.get(act_idx)
                 self.pyboy.button_press(button) # DO NOT USE pyboy.button!!! - use press/release
                 for _ in range(10):
-                    pokemon_red.pyboy.tick()
+                    self.pyboy.tick()
                 self.pyboy.button_release(button)
 
-pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0, window="SDL2", sound_emulated=False)
 
 
 # Creating First save

@@ -7,6 +7,8 @@ import torch.optim as optim
 import matplotlib.pyplot as plt
 import random
 
+from main import PokemonRed
+
 
 def manhattan_distance(pos1, pos2):
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
@@ -31,7 +33,8 @@ def plot_results(list_rewards):
     plt.show()
 
 def train_model(config, stop_event: threading.Event):
-    from main import pokemon_red
+    pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0, window="SDL2", sound_emulated=False)
+
 
     learning_rate = config.learning_rate
     num_episodes = config.num_episodes
@@ -58,7 +61,6 @@ def train_model(config, stop_event: threading.Event):
             if stop_event.is_set():
                 print("Stopping training.")
                 return
-
 
             pokemon_red.load_game(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\saves\pokemon_red_save.state")
             state = pokemon_red.get_state()
@@ -168,5 +170,5 @@ def train_model(config, stop_event: threading.Event):
         plot_results(list_rewards=list_epsilon_rewards)
     finally:
         training_running = False
-        print("error")
+        pokemon_red.end_game()
 
