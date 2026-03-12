@@ -8,13 +8,13 @@ frame = 1
 
 # Writes my player's name (TJ) and Gary's name (KAZ)
 name_frames = {
-    4100: "right", 4150: "down", 4200: "down", 4250: "a", 4300: "left", 4350: "up", 4400: "a",
-    4450: "right", 4500: "right", 4550: "right", 4600: "right", 4650: "right", 4700: "right",
-    4750: "right", 4800: "right", 4850: "down", 4900: "down", 4950: "down", 5000: "a", 5100: "a",
-    5200: "a", 5300: "a", 5500: "a", 5700: "a", 5900: "a", 6100: "a", 6300: "a",6350: "right",
-    6400: "down", 6450: "a", 6500: "left", 6550: "up", 6600: "a", 6650: "right", 6700: "right",
-    6750: "right", 6800: "right", 6850: "right", 6900: "right", 6950: "right", 7000: "down",
-    7050: "down", 7100: "a", 7150: "down", 7200: "down", 7250: "right", 7300: "a",
+    4900: "right", 4950: "down", 5000: "down", 5050: "a", 5100: "left", 5150: "up", 5200: "a",
+    5250: "right", 5300: "right", 5350: "right", 5400: "right", 5450: "right", 5500: "right",
+    5550: "right", 5600: "right", 5650: "down", 5700: "down", 5750: "down", 5800: "a", 6200: "a",
+    6400: "a", 6600: "a", 6800: "a", 6900: "a", 7000: "a", 7100: "a", 7200: "a",7250: "right",
+    7300: "down", 7350: "a", 7400: "left", 7450: "up", 7500: "a", 7550: "right", 7600: "right",
+    7650: "right", 7700: "right", 7750: "right", 7800: "right", 7850: "right", 7900: "down",
+    7950: "down", 8000: "a", 8050: "down", 8100: "down", 8150: "right", 8200: "a",
 }
 
 
@@ -59,18 +59,17 @@ class PokemonRed:
             if self.frame % 200 == 0 and 800 < self.frame < 1300:
                 self.pyboy.button("down", 3)
 
-                print(self.frame)
-
             elif self.frame == 1400:
                 self.pyboy.button("up", 3)
 
-            elif ((self.frame % 200 == 0 and self.frame <= 800) or (self.frame % 200 == 0 and 1700 < self.frame <= 4000)
-                    or (self.frame % 200 == 0 and 7400 < self.frame <= 9999)):
+            elif ((self.frame % 200 == 0 and self.frame <= 800) or (self.frame % 200 == 0 and 1700 < self.frame <= 4800)
+                    or (self.frame % 200 == 0 and 8250 < self.frame <= 9999)):
                 self.pyboy.button("a", 3)
 
-            elif self.frame % 50 == 0 and 4099 < self.frame <= 7350:
+            elif self.frame % 50 == 0 and 4800 < self.frame <= 8250:
                 if self.frame in name_frames:
                     self.pyboy.button(name_frames[self.frame])
+
 
             if self.frame == 10000:
                  break
@@ -87,16 +86,14 @@ class PokemonRed:
             if self.frame % 100 == 0 and 700 < self.frame < 1100:
                 self.pyboy.button("down", 3)
 
-            if self.frame % 100 == 0 and 1200 < self.frame < 1800:
+            if self.frame % 100 == 0 and 1200 < self.frame < 2000:
                 self.pyboy.button("a", 3)
 
-            if self.frame == 2000:
+            if self.frame == 2200:
                 with open("saves/pokemon_red_save.state", "wb") as f:
                     self.pyboy.save_state(f)
                 break
 
-
-            print(self.frame)
             self.frame += 1
 
     def end_game(self):
