@@ -9,7 +9,6 @@ import random
 
 from main import PokemonRed
 
-
 def manhattan_distance(pos1, pos2):
     return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
 
@@ -32,9 +31,17 @@ def plot_results(list_rewards):
     plt.ylabel("Total reward")
     plt.show()
 
-def train_model(config, stop_event: threading.Event):
-    pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0, window="SDL2", sound_emulated=False)
+def save_game():
+    pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0,
+                             window="SDL2", sound_emulated=False)
 
+    pokemon_red.create_game()
+    pokemon_red.save_game()
+    pokemon_red.end_game()
+
+def train_model(config, stop_event: threading.Event):
+    pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0,
+                             window="SDL2", sound_emulated=False)
 
     learning_rate = config.learning_rate
     num_episodes = config.num_episodes

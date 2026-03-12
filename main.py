@@ -46,7 +46,6 @@ class PokemonRed:
         self.in_battle_state = self.pyboy.memory[0xD057]
 
     def create_game(self):
-
         while self.pyboy.tick():
 
             x = self.pyboy.memory[0xD361]
@@ -57,10 +56,19 @@ class PokemonRed:
             # map_id = self.pyboy.memory[0xD35E]
 
             # Gets to choosing player's name
-            if (self.frame % 200 == 0 and self.frame <= 4000) or (self.frame % 200 == 0 and 7400 < self.frame <= 9999):
+            if self.frame % 200 == 0 and 800 < self.frame < 1300:
+                self.pyboy.button("down", 3)
+
+                print(self.frame)
+
+            elif self.frame == 1400:
+                self.pyboy.button("up", 3)
+
+            elif ((self.frame % 200 == 0 and self.frame <= 800) or (self.frame % 200 == 0 and 1700 < self.frame <= 4000)
+                    or (self.frame % 200 == 0 and 7400 < self.frame <= 9999)):
                 self.pyboy.button("a", 3)
 
-            if self.frame % 50 == 0 and 4099 < self.frame <= 7350:
+            elif self.frame % 50 == 0 and 4099 < self.frame <= 7350:
                 if self.frame in name_frames:
                     self.pyboy.button(name_frames[self.frame])
 

@@ -6,7 +6,7 @@ import torch
 from fastapi import FastAPI, BackgroundTasks
 from api.schemas import PredictionInput, TrainingConfig
 from utils.inference import load_model
-from training import train_model
+from training import train_model, save_game
 
 training_running = False
 stop_training_event = threading.Event()
@@ -61,10 +61,13 @@ train_config = TrainingConfig()
 
 @app.post("/create_save") # TODO
 def create_save():
-    from main import pokemon_red
-    pokemon_red.create_game()
-    pokemon_red.save_game()
-    pokemon_red.end_game()
+    global training_running, training_thread
+    if training_running:
+        stop()
+
+    save_game()
+
+
     return {"message": "Save has been created."}
 
 @app.post("/train/start")
