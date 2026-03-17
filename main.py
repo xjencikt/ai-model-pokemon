@@ -3,6 +3,7 @@ from sympy.physics.units import action
 import numpy as np
 import random
 import threading
+import keyboard
 
 frame = 1
 
@@ -40,10 +41,20 @@ class PokemonRed:
         self.frame = 0
 
         self.pyboy = PyBoy(self.name, window=self.window, sound_volume=sound, sound_emulated=sound_emulated)
-        self.pyboy.set_emulation_speed(0)
+        self.pyboy.set_emulation_speed(1)
 
         self.map_id = self.pyboy.memory[0xD35E]
         self.in_battle_state = self.pyboy.memory[0xD057]
+
+    def play_game(self, key, save_name):
+        while self.pyboy.tick():
+
+            if keyboard.is_pressed(key):
+                with open(save_name, "wb") as f:
+                    pokemon_red.pyboy.save_state(f)
+                print("State saved!")
+
+            self.frame += 1
 
     def create_game(self):
         while self.pyboy.tick():
@@ -90,7 +101,7 @@ class PokemonRed:
                 self.pyboy.button("a", 3)
 
             if self.frame == 2200:
-                with open("saves/pokemon_red_save.state", "wb") as f:
+                with open("saves/pokemon_red_save_stage1.state", "wb") as f:
                     self.pyboy.save_state(f)
                 break
 
@@ -144,7 +155,12 @@ class PokemonRed:
 
 
 # Creating First save
-# pokemon_red.create_game()
+# pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0,
+#                              window="SDL2", sound_emulated=False)
+#
+# pokemon_red.play_game("F5" ,r"saves\pokemon_red_save_stage3.state")
+
+#pokemon_red.create_game()
 # pokemon_red.save_game()
 # pokemon_red.end_game()
 

@@ -89,7 +89,7 @@ def train_model(config, stop_event: threading.Event):
                 tile_id = tile[position[0], position[1]]
 
                 position_tuple = tuple(position), (state[2],)
-                pokemon_red.player_action(act_idx)
+                #pokemon_red.player_action(act_idx)
 
                 new_position = pokemon_red.get_position()
 
@@ -105,13 +105,13 @@ def train_model(config, stop_event: threading.Event):
                     new_position_tuple = tuple(new_position) + (state[2],)
 
                     if new_position_tuple not in visited_tiles:
-                        reward += 0.02
+                        # reward += 0.02
                         visited_tiles.add(new_position_tuple)
                     else:
-                        reward -= 0.005
+                        reward -= 0.001
 
                 else: # did not move
-                    reward -= 0.02
+                    reward -= 0.05
 
                 if state[2] != next_state[2] and next_state[2] not in visited_places:
                     position = new_position
@@ -126,9 +126,9 @@ def train_model(config, stop_event: threading.Event):
 
                 if state[2] == 0:
 
-                    max_distance = 20
-                    distance = manhattan_distance(position, [1,10])
-                    reward += 0.01 * (max_distance - distance)
+                    old_distance = manhattan_distance(position, [1, 10])
+                    new_distance = manhattan_distance(new_position, [1,10])
+                    reward += 0.2 * (old_distance - new_distance)
 
                 if (position == [1,10] or position == [1,11]) and state[2] == 0:
                     reward = 40.0
