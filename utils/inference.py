@@ -4,7 +4,7 @@ from qnet import DQNet
 
 def load_model():
     model = DQNet()
-    model.load_state_dict(torch.load(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\model\dummy.pth", map_location="cpu"))
+    model.load_state_dict(torch.load(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\models\stage0.pth", map_location="cpu"))
     model.eval()
 
     return model

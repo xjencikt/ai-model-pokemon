@@ -51,6 +51,7 @@ def train_model(config, stop_event: threading.Event):
     epsilon_decay = config.epsilon_decay
     max_steps = config.max_steps
     gamma = config.gamma
+    stages = config.stages
 
     model = DQNet().float()
     target_model = DQNet().float()
@@ -60,122 +61,151 @@ def train_model(config, stop_event: threading.Event):
 
     list_epsilon_rewards = []
 
+
+
     global training_running
 
     try:
-        for episode in range(num_episodes):
+        for stage_idx, stage in enumerate(stages):
+            print(f"Starting stage: {stage_idx + 1}")
 
-            if stop_event.is_set():
-                print("Stopping training.")
-                return
+            if stage_idx == 0:
+                model.load_state_dict(torch.load(r"models/stage0.pth"))
+            else:
+                prev_model_path = stages[stage_idx - 1]["model_save"]
+                model.load_state_dict(torch.load(prev_model_path))
 
-            pokemon_red.load_game(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\saves\pokemon_red_save.state")
-            state = pokemon_red.get_state()
+            target_model.load_state_dict(model.state_dict())
 
-            done = False
-            step = 0
-            visited_tiles = set()
-            visited_places = set()
-            visited_places.add(state[2])
-            epsilon_rewards = 0
+            epsilon = config.epsilon
 
-            room_reward = 6
+            for episode in range(stage.get("episodes")):
 
-            while not done and step < max_steps:
-                act_idx = select_action(state, model, epsilon, random_number_threshold)
-                position = pokemon_red.get_position()
+                if stop_event.is_set():
+                    print("Stopping training.")
+                    return
 
-                tile = pokemon_red.pyboy.tilemap_background
-                tile_id = tile[position[0], position[1]]
+                pokemon_red.load_game(stage.get("save"))
+                state = pokemon_red.get_state()
 
-                position_tuple = tuple(position), (state[2],)
-                #pokemon_red.player_action(act_idx)
+                done = False
+                step = 0
+                visited_tiles = set()
+                visited_places = set()
+                visited_places.add(state[2])
+                epsilon_rewards = 0
 
-                new_position = pokemon_red.get_position()
+                room_reward = 6
 
-                next_state = pokemon_red.get_state()
+                while not done and step < max_steps:
+                    door_reward = max(50, 100 - step * 0.5)
 
-                #Rewards
+                    act_idx = select_action(state, model, epsilon, random_number_threshold)
+                    position = pokemon_red.get_position()
 
-                reward = -0.01
-                if act_idx > 2:  # noop - 0, a - 1, b - 2 actions
-                    if position == new_position: # hit wall
+                    tile = pokemon_red.pyboy.tilemap_background
+                    tile_id = tile[position[0], position[1]]
+
+                    position_tuple = tuple(position) + (state[2],)
+                    pokemon_red.player_action(act_idx)
+
+                    new_position = pokemon_red.get_position()
+
+                    next_state = pokemon_red.get_state()
+
+                    #Rewards
+
+                    reward = -0.01
+                    if act_idx > 2:  # noop - 0, a - 1, b - 2 actions
+                        if position == new_position: # hit wall
+                            reward -= 0.2
+                        new_position_tuple = tuple(new_position) + (state[2],)
+                        if new_position_tuple not in visited_tiles:
+                            reward += 0.5
+                            visited_tiles.add(new_position_tuple)
+                        else:
+                            reward -= 0.01
+                    else: # noop/a/b
                         reward -= 0.1
 
-                    new_position_tuple = tuple(new_position) + (state[2],)
+                    if state[2] == 0:
+                        old_distance = manhattan_distance(position, [1, 10])
+                        new_distance = manhattan_distance(new_position, [1,10])
+                        reward += 0.2 * (old_distance - new_distance)
 
-                    if new_position_tuple not in visited_tiles:
-                        # reward += 0.02
-                        visited_tiles.add(new_position_tuple)
-                    else:
-                        reward -= 0.001
+                    if stage_idx == 0 and round(next_state[2], 3) == 0.145: # left first room
+                        reward += door_reward
+                        done = True
+                        print(f"Episode {episode} - reached door at step {step}")
 
-                else: # did not move
-                    reward -= 0.05
+                    elif stage_idx == 1 and next_state[2] == 0.0:  # left second room
+                        reward += door_reward
+                        done = True
+                        print(f"Episode {episode} - reached door at step {step}")
+                    elif stage_idx == 1 and round(next_state[2], 3) == 0.149:
+                        reward -= 1.0
+                        pokemon_red.load_game(stage["save"])
+                        next_state = pokemon_red.get_state()
+                        #step = 0
+                        visited_tiles.clear()
 
-                if state[2] != next_state[2] and next_state[2] not in visited_places:
-                    position = new_position
-                    visited_places.add(next_state[2])
-                    reward += room_reward
+                    elif stage_idx == 2 and state[2] == 0.0 and (new_position == [1, 10] or new_position == [1, 11]):  # reached grass
+                        reward = door_reward
+                        done = True
+                    elif stage_idx == 2 and round(next_state[2], 3) == 0.145:
+                        reward -= 0.2
+                        pokemon_red.load_game(stage["save"])
+                        next_state = pokemon_red.get_state()
+                        #step = 0
+                        visited_tiles.clear()
 
-                    room_reward = room_reward + 6
+                    visited_tiles.add(position_tuple)
 
-                elif state[2] != next_state[2] and next_state[2] in visited_places:
-                    reward -= 2.0
+                    buffer.push(state, act_idx, reward, next_state, float(done))
+                    batch_size = 64
+                    if len(buffer) >= batch_size:
+                        states, actions, rewards_b, next_states, dones = buffer.sample(batch_size)
 
+                        states = torch.tensor(states)
+                        actions = torch.tensor(actions, dtype=torch.long)
+                        rewards_b = torch.tensor(rewards_b)
+                        next_states = torch.tensor(next_states)
+                        dones = torch.tensor(dones)
 
-                if state[2] == 0:
+                        dqn = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
 
-                    old_distance = manhattan_distance(position, [1, 10])
-                    new_distance = manhattan_distance(new_position, [1,10])
-                    reward += 0.2 * (old_distance - new_distance)
+                        with torch.no_grad():
+                            q_next = target_model(next_states).max(1)[0]
+                            target = rewards_b + gamma * q_next * (1 - dones)
 
-                if (position == [1,10] or position == [1,11]) and state[2] == 0:
-                    reward = 40.0
-                    done = True
+                        loss = torch.nn.functional.mse_loss(dqn, target)
 
-                visited_tiles.add(position_tuple)
+                        optimizer.zero_grad()
+                        loss.backward()
+                        torch.nn.utils.clip_grad_norm_(model.parameters(), 10)
+                        optimizer.step()
 
-                buffer.push(state, act_idx, reward, next_state, float(done))
-                batch_size = 64
-                if len(buffer) >= batch_size:
-                    states, actions, rewards_b, next_states, dones = buffer.sample(batch_size)
+                    epsilon_rewards += reward
+                    state = next_state
+                    step += 1
 
-                    states = torch.tensor(states)
-                    actions = torch.tensor(actions, dtype=torch.long)
-                    rewards_b = torch.tensor(rewards_b)
-                    next_states = torch.tensor(next_states)
-                    dones = torch.tensor(dones)
+                    if done:
+                        print(reward)
+                        break
 
-                    dqn = model(states).gather(1, actions.unsqueeze(1)).squeeze(1)
+                if episode % 10 == 0:
+                    target_model.load_state_dict(model.state_dict())
 
-                    with torch.no_grad():
-                        q_next = target_model(next_states).max(1)[0]
-                        target = rewards_b + gamma * q_next * (1 - dones)
+                epsilon = max(epsilon_min, epsilon * epsilon_decay)
+                print(f"Stage {stage_idx + 1} | Episode {episode} | Epsilon {epsilon:.3f}")
+                list_epsilon_rewards.append(epsilon_rewards)
 
-                    loss = torch.nn.functional.mse_loss(dqn, target)
-
-                    optimizer.zero_grad()
-                    loss.backward()
-                    torch.nn.utils.clip_grad_norm_(model.parameters(), 10)
-                    optimizer.step()
-
-                epsilon_rewards += reward
-                state = next_state
-                step += 1
-
-            if episode % 10 == 0:
-                target_model.load_state_dict(model.state_dict())
-
-
-
-            epsilon = max(epsilon_min, epsilon * epsilon_decay)
-            print(f"Episode {episode}, epsilon = {epsilon}")
-
-            list_epsilon_rewards.append(epsilon_rewards)
+            torch.save(model.state_dict(), stage["model_save"])
+            print(f"--- Stage {stage_idx + 1} complete, saved to {stage['model_save']} ---")
 
         plot_results(list_rewards=list_epsilon_rewards)
     finally:
+        print("FAILED")
         training_running = False
         pokemon_red.end_game()
 

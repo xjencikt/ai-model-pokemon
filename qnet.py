@@ -7,18 +7,26 @@ import numpy as np
 
 
 class DQNet(nn.Module):
-    def __init__(self, input_dim=12, num_actions=7):  # 12 tiles
+    def __init__(self, num_actions=7):
         super().__init__()
-        self.net = nn.Sequential(
-            nn.Linear(input_dim, 64),
+        self.conv = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Linear(64, 64),
+            nn.Conv2d(16, 32, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Linear(64, num_actions)
+        )
+        self.fc = nn.Sequential(
+            nn.Linear(32 * 7 * 7 + 3, 128),  # 3 = x, y, map_id
+            nn.ReLU(),
+            nn.Linear(128, num_actions)
         )
 
     def forward(self, x):
-        return self.net(x)
+        pos = x[:, :3]  # x, y, map_id
+        tiles = x[:, 3:].view(-1, 1, 7, 7)  # reshape to 2D grid
+        conv_out = self.conv(tiles).view(x.size(0), -1)
+        combined = torch.cat([conv_out, pos], dim=1)
+        return self.fc(combined)
 
 
 class ReplayBuffer:

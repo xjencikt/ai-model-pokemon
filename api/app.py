@@ -24,7 +24,7 @@ def run_training(input: TrainingConfig):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Loading model...")
+    print("Loading models...")
     app.state.model = load_model()
     print("Model loaded.")
     yield

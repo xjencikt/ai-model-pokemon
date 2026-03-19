@@ -1,0 +1,7 @@
+fastapi==0.135.1
+matplotlib==3.10.8
+numpy==2.4.3
+pyboy==2.7.0
+pydantic==2.12.5
+sympy==1.14.0
+torch==2.10.0

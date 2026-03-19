@@ -41,17 +41,17 @@ class PokemonRed:
         self.frame = 0
 
         self.pyboy = PyBoy(self.name, window=self.window, sound_volume=sound, sound_emulated=sound_emulated)
-        self.pyboy.set_emulation_speed(1)
+        self.pyboy.set_emulation_speed(0)
 
         self.map_id = self.pyboy.memory[0xD35E]
         self.in_battle_state = self.pyboy.memory[0xD057]
 
-    def play_game(self, key, save_name):
+    def play_game(self, game, key, save_name):
         while self.pyboy.tick():
 
             if keyboard.is_pressed(key):
                 with open(save_name, "wb") as f:
-                    pokemon_red.pyboy.save_state(f)
+                    game.pyboy.save_state(f)
                 print("State saved!")
 
             self.frame += 1
@@ -129,9 +129,11 @@ class PokemonRed:
         tile = self.pyboy.tilemap_background
         # Radius 3x3
         radius_tiles = []
-        for px in range(-1, 2):
-            for py in range(-1, 2):
-                radius_tile = tile[x + px][y + py] / 512
+        for px in range(-3, 4):
+            for py in range(-3, 4):
+                cx = max(0, min(31, x + px))
+                cy = max(0, min(31, y + py))
+                radius_tile = tile[cx][cy] / 512
                 radius_tiles.append(radius_tile)
 
 
@@ -156,9 +158,9 @@ class PokemonRed:
 
 # Creating First save
 # pokemon_red = PokemonRed(r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\game\pokemon_red.gb", sound=0,
-#                              window="SDL2", sound_emulated=False)
+#                               window="SDL2", sound_emulated=False)
 #
-# pokemon_red.play_game("F5" ,r"saves\pokemon_red_save_stage3.state")
+# pokemon_red.play_game(pokemon_red, "F5" ,r"saves\pokemon_red_save_stage4.state")
 
 #pokemon_red.create_game()
 # pokemon_red.save_game()
