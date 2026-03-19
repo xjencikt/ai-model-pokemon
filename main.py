@@ -142,6 +142,7 @@ class PokemonRed:
     def player_action(self, act_idx):
         if act_idx > 2:
                 button = MOVE_ACTIONS.get(act_idx)
+                print(button)
                 self.pyboy.button_press(button) # DO NOT USE pyboy.button!!! - use press/release
                 for _ in range(10):
                     self.pyboy.tick()
@@ -149,6 +150,7 @@ class PokemonRed:
         else:
             if act_idx != 0:
                 button = CLICK_ACTIONS.get(act_idx)
+                print(button)
                 self.pyboy.button_press(button) # DO NOT USE pyboy.button!!! - use press/release
                 for _ in range(10):
                     self.pyboy.tick()

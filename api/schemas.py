@@ -18,16 +18,19 @@ class TrainingConfig(BaseModel):
     {
         "save": r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\saves\pokemon_red_save_stage1.state",
         "episodes": num_episodes,
+        "steps": max_steps,
         "model_save": r"models\stage1.pth"
     },
     {
         "save": r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\saves\pokemon_red_save_stage2.state",
         "episodes": num_episodes,
+        "steps": max_steps,
         "model_save": r"models\stage2.pth"
     },
     {
         "save": r"C:\Users\jencikt\PycharmProjects\ai-model-pokemon\saves\pokemon_red_save_stage3.state",
         "episodes": num_episodes,
+        "steps": max_steps,
         "model_save": r"models\stage3.pth"
     },
 ]
