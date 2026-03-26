@@ -24,7 +24,7 @@ def run_inference():
     )
 
     model = DQNet()
-    model.load_state_dict(torch.load(r"../models/stage1.pth", map_location="cpu"))
+    model.load_state_dict(torch.load(r"../models/stage0.pth", map_location="cpu"))
     model.eval()  # disable dropout etc.
 
     pokemon_red.load_game(r"../saves/pokemon_red_save_stage1.state")  # start from bedroom
@@ -51,5 +51,3 @@ def run_inference():
             break
 
     pokemon_red.end_game()
-
-run_inference()
